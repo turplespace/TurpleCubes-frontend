@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import  { useState, useEffect, useRef } from 'react';
 import { X, Maximize2, Minimize2, Terminal as TerminalIcon, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
