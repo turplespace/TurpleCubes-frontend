@@ -22,6 +22,8 @@ import {
   Play,
   HardDrive,
   ArrowLeft,
+  X,
+  Plus,
 } from "lucide-react";
 
 interface Image {
@@ -47,6 +49,21 @@ interface ImagesListPageProps {
   pageNavigator: (page: string) => void;
 }
 
+interface EnvironmentVariable {
+  key: string;
+  value: string;
+}
+
+interface Volume {
+  host: string;
+  container: string;
+}
+
+interface Port {
+  host: string;
+  container: string;
+}
+
 const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
   const [images, setImages] = useState<Image[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,6 +86,57 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
     environment: '',
     volumes: ''
   });
+
+  const [envVars, setEnvVars] = useState<EnvironmentVariable[]>([{ key: '', value: '' }]);
+  const [volumes, setVolumes] = useState<Volume[]>([{ host: '', container: '' }]);
+  const [ports, setPorts] = useState<Port[]>([{ host: '', container: '' }]);
+  const handleAddPort = () => {
+    setPorts([...ports, { host: '', container: '' }]);
+  };
+
+  const handleRemovePort = (index: number) => {
+    const newPorts = [...ports];
+    newPorts.splice(index, 1);
+    setPorts(newPorts);
+  };
+
+  const handlePortChange = (index: number, field: 'host' | 'container', value: string) => {
+    const newPorts = [...ports];
+    newPorts[index][field] = value;
+    setPorts(newPorts);
+  };
+
+  const handleAddEnvVar = () => {
+    setEnvVars([...envVars, { key: '', value: '' }]);
+  };
+
+  const handleRemoveEnvVar = (index: number) => {
+    const newEnvVars = [...envVars];
+    newEnvVars.splice(index, 1);
+    setEnvVars(newEnvVars);
+  };
+
+  const handleEnvVarChange = (index: number, field: 'key' | 'value', value: string) => {
+    const newEnvVars = [...envVars];
+    newEnvVars[index][field] = value;
+    setEnvVars(newEnvVars);
+  };
+
+  const handleAddVolume = () => {
+    setVolumes([...volumes, { host: '', container: '' }]);
+  };
+
+  const handleRemoveVolume = (index: number) => {
+    const newVolumes = [...volumes];
+    newVolumes.splice(index, 1);
+    setVolumes(newVolumes);
+  };
+
+  const handleVolumeChange = (index: number, field: 'host' | 'container', value: string) => {
+    const newVolumes = [...volumes];
+    newVolumes[index][field] = value;
+    setVolumes(newVolumes);
+  };
 
   useEffect(() => {
     localStorage.setItem('selectedPage',"ImagesList");
@@ -98,48 +166,46 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
 
   const handleCreateContainer = async () => {
     try {
-      // Parse ports from string to array
-      const portsArray = containerForm.ports
-        ? containerForm.ports.split(',').map(p => p.trim())
-        : []; // Default port if none specified
-  
-      // Parse environment variables from string to array
-      const envArray = containerForm.environment
-        ? containerForm.environment.split(',').map(e => e.trim())
-        : [];
-  
-      // Set up volumes with default if none specified
-      let volumesObj: { [key: string]: string } = {};
-      if (containerForm.volumes) {
-        containerForm.volumes.split(',').forEach(v => {
-          const [host, container] = v.trim().split(':');
-          if (host && container) {
-            volumesObj[host] = container;
-          }
-        });
-      } else {
-        // Default volume mapping using container name
-        volumesObj[`[DEFAULT]/${containerForm.name}`] = '/workspace';
+      const portsArray = ports
+      .filter(port => port.host && port.container)
+      .map(port => `${port.host}:${port.container}`);
+
+    // Convert environment variables to array format
+    const envArray = envVars
+      .filter(env => env.key && env.value)
+      .map(env => `${env.key}=${env.value}`);
+
+    // Convert volumes to object format
+    const volumesObj: { [key: string]: string } = {};
+    volumes.forEach(vol => {
+      if (vol.host && vol.container) {
+        volumesObj[vol.host] = vol.container;
       }
+    });
+
+    // If no volumes specified, use default
+    if (Object.keys(volumesObj).length === 0) {
+      volumesObj[`[DEFAULT]/${containerForm.name}`] = '/workspace';
+    }
+
+    const workspaceId = localStorage.getItem('selectedWorkspaceId');
+    if (workspaceId) {
+      const workspaceIdInt = parseInt(workspaceId);
   
-      const workspaceId = localStorage.getItem('selectedWorkspaceId');
-      if (workspaceId) {
-        const workspaceIdInt = parseInt(workspaceId);
-    
-        const payload = {
-          workspace_id: workspaceIdInt,
-          cubes: [{
-            name: containerForm.name,
-            image: `${containerForm.image}:${containerForm.tag}`,
-            ports: portsArray,
-            environment_vars: envArray,
-            resource_limits: resourceLimits,
-            volumes: volumesObj,
-            labels: [`workspace_id=${workspaceIdInt}`, "service=turplespace"],
-            force: true  // Add force flag to create container even if it doesn't exist
-          }]
-        };
-  
+      const payload = {
+        workspace_id: workspaceIdInt,
+        cubes: [{
+          name: containerForm.name,
+          image: `${containerForm.image}:${containerForm.tag}`,
+          ports: portsArray,
+          environment_vars: envArray,
+          resource_limits: resourceLimits,
+          volumes: volumesObj,
+          labels: [`workspace_id=${workspaceIdInt}`, "service=turplespace"],
+          force: true
+        }]
+      };
+
         const response = await fetch('http://localhost:8080/api/cube/add', {
           method: 'POST',
           headers: {
@@ -363,84 +429,198 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
       </Dialog>
 
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>Create Cube</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Cube Name*</label>
-            <Input
-              placeholder="Enter Cube name"
-              value={containerForm.name}
-              onChange={(e) => setContainerForm({...containerForm, name: e.target.value})}
-              required
-            />
-            <span className="text-xs text-gray-500">
-              This will also be used for the default volume path if none is specified
-            </span>
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Image</label>
-            <Input value={containerForm.image} disabled />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Ports (host:container)</label>
-            <Input
-              placeholder="e.g., 80:80, 443:443 (default: 80:80)"
-              value={containerForm.ports}
-              onChange={(e) => setContainerForm({...containerForm, ports: e.target.value})}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Environment Variables</label>
-            <Input
-              placeholder="e.g., KEY1=value1,KEY2=value2"
-              value={containerForm.environment}
-              onChange={(e) => setContainerForm({...containerForm, environment: e.target.value})}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Volumes</label>
-            <Input
-              placeholder="e.g., /host/path:/container/path"
-              value={containerForm.volumes}
-              onChange={(e) => setContainerForm({...containerForm, volumes: e.target.value})}
-            />
-            <span className="text-xs text-gray-500">
-              Default: /home/dharshan/portos_backend/bin/turplecube_volumes/{containerForm.name}:/workspace
-            </span>
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">CPU Limit</label>
-            <Input
-              placeholder="e.g., 1.0"
-              value={resourceLimits.cpus}
-              onChange={(e) => setResourceLimits({...resourceLimits, cpus: e.target.value})}
-            />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium">Memory Limit</label>
-            <Input
-              placeholder="e.g., 512M"
-              value={resourceLimits.memory}
-              onChange={(e) => setResourceLimits({...resourceLimits, memory: e.target.value})}
-            />
+        
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="grid gap-4 py-4">
+            {/* Cube Name */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Cube Name*</label>
+              <Input
+                placeholder="Enter Cube name"
+                value={containerForm.name}
+                onChange={(e) => setContainerForm({...containerForm, name: e.target.value})}
+                required
+              />
+              <span className="text-xs text-gray-500">
+                This will also be used for the default volume path if none is specified
+              </span>
+            </div>
+
+            {/* Image */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Image</label>
+              <Input value={containerForm.image} disabled />
+            </div>
+
+            {/* Ports */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Ports</label>
+              <div className="space-y-2">
+                {ports.map((port, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Host Port"
+                      value={port.host}
+                      onChange={(e) => handlePortChange(index, 'host', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Container Port"
+                      value={port.container}
+                      onChange={(e) => handlePortChange(index, 'container', e.target.value)}
+                      className="flex-1"
+                    />
+                    {ports.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleRemovePort(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddPort}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Port
+                </Button>
+              </div>
+              <span className="text-xs text-gray-500">
+                Default: 80:80
+              </span>
+            </div>
+
+            {/* Environment Variables */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Environment Variables</label>
+              <div className="space-y-2">
+                {envVars.map((env, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Key"
+                      value={env.key}
+                      onChange={(e) => handleEnvVarChange(index, 'key', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Value"
+                      value={env.value}
+                      onChange={(e) => handleEnvVarChange(index, 'value', e.target.value)}
+                      className="flex-1"
+                    />
+                    {envVars.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleRemoveEnvVar(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddEnvVar}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Environment Variable
+                </Button>
+              </div>
+            </div>
+
+            {/* Volumes */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Volumes</label>
+              <div className="space-y-2">
+                {volumes.map((volume, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      placeholder="Host Path"
+                      value={volume.host}
+                      onChange={(e) => handleVolumeChange(index, 'host', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Container Path"
+                      value={volume.container}
+                      onChange={(e) => handleVolumeChange(index, 'container', e.target.value)}
+                      className="flex-1"
+                    />
+                    {volumes.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleRemoveVolume(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddVolume}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Add Volume
+                </Button>
+              </div>
+              <span className="text-xs text-gray-500">
+                Default: /home/dharshan/portos_backend/bin/turplecube_volumes/{containerForm.name}:/workspace
+              </span>
+            </div>
+
+            {/* Resource Limits */}
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">CPU Limit</label>
+              <Input
+                placeholder="e.g., 1.0"
+                value={resourceLimits.cpus}
+                onChange={(e) => setResourceLimits({...resourceLimits, cpus: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Memory Limit</label>
+              <Input
+                placeholder="e.g., 512M"
+                value={resourceLimits.memory}
+                onChange={(e) => setResourceLimits({...resourceLimits, memory: e.target.value})}
+              />
+            </div>
           </div>
         </div>
-        <div className="flex justify-end gap-2">
+
+        {/* Footer with action buttons */}
+        <div className="flex justify-end gap-2 p-6 pt-2 border-t">
           <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
             Cancel
           </Button>
           <Button 
             onClick={handleCreateContainer}
-            disabled={!containerForm.name} // Disable if no name is provided
+            disabled={!containerForm.name}
           >
             Create Cube
           </Button>
         </div>
       </DialogContent>
     </Dialog>
+
+    
 
     </div>
   );
