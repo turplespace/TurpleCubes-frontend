@@ -5,6 +5,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import ProxyManagement from "@/components/ProxyManagement"
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -80,6 +81,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
   const [editedWorkspace, setEditedWorkspace] = useState<WorkspaceConfig>(INITIAL_WORKSPACE);
   const [isLoading, setIsLoading] = useState(true);
   const [isCommitDialogOpen, setIsCommitDialogOpen] = useState(false);
+  const [cubeId,setCubeId] = useState("")
   const [commitForm, setCommitForm] = useState({
     image: '',
     tag: ''
@@ -89,6 +91,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
     localStorage.setItem('selectedPage',"CubeDashboard");
     const containerId = localStorage.getItem('selectedContainerId');
     if (containerId) {
+      setCubeId(containerId)
       fetchContainerData(containerId);
     }
   }, []);
@@ -540,7 +543,11 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
           </div>
         </CardContent>
       </Card>
-
+      {
+        workspace.status === 'running' && (
+          <ProxyManagement cubeId={localStorage.getItem('selectedContainerId') || ''} />
+        )
+      }
       {/* Edit Dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
         <DialogContent className="max-w-2xl">
