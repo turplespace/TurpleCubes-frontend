@@ -26,6 +26,7 @@ import {
   Code,
   Globe
 } from "lucide-react";
+import { parse } from 'node:querystring';
 
 interface WorkspaceConfig {
   image: string;
@@ -322,10 +323,48 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
     setIsEditing(true);
   };
   const handleCode = () => {
-    const url =  `http://${workspace.ip_address}:8080`;
-    // Open the URL in a new tab
-    window.open(url, '_blank');
+    const domain = `${workspace.container_name}.localhost`;
+    const body = {
+      cube_id: parseInt(cubeId),
+      domain: domain,
+      port: 8080,
+      type: "code",
+      default: true
+    };
+    console.log(body)
+
+    fetch('http://localhost:8080/api/proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body)
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(text => { throw new Error(text) });
+      }
+      return response.json();
+    })
+    .then(data => {
+      const proxyID = data.id;
+      return fetch(`http://localhost:8080/api/proxy/${proxyID}/deploy`, {
+        method: 'POST'
+      });
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to deploy proxy');
+      }
+      const url = `http://${domain}`;
+      window.open(url, '_blank');
+    })
+    .catch(error => {
+      console.error('Error handling code:', error);
+      alert('Failed to handle code: ' + error.message);
+    });
   }
+
   const handleInputChange = (field: string, value: string) => {
     setEditedWorkspace(prev => ({
       ...prev,
