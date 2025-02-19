@@ -26,7 +26,6 @@ import {
   Code,
   Globe
 } from "lucide-react";
-import { parse } from 'node:querystring';
 
 interface WorkspaceConfig {
   image: string;
