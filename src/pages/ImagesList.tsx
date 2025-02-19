@@ -185,7 +185,7 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
 
     // If no volumes specified, use default
     if (Object.keys(volumesObj).length === 0) {
-      volumesObj[`[DEFAULT]/${containerForm.name}`] = '/workspace';
+      volumesObj[`[DEFAULT]/${containerForm.name}`] = '/home/coder/workspace';
     }
 
     const workspaceId = localStorage.getItem('selectedWorkspaceId');
