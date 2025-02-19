@@ -139,20 +139,35 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
   };
 
   useEffect(() => {
-    localStorage.setItem('selectedPage',"ImagesList");
-    fetch('http://localhost:8080/api/repo/local')
+    localStorage.setItem('selectedPage', "ImagesList");
+
+    const fetchLocalImages = fetch('http://localhost:8080/api/repo/local')
       .then(response => response.json())
-      .then(data => {
-        const allImages = [ ...data.custom_images].map((img: any, index: number) => ({
-          id: (index + 1).toString(),
-          name: img.image,
-          tag: img.tag,
-          size: img.size,
-          pulled: new Date(img.Pulled_on).toISOString().split('T')[0],
-          source: 'local' as 'local' | 'registry',
-          description: img.desc
-        }));
-        setImages(allImages);
+      .then(data => data.custom_images.map((img: any, index: number) => ({
+        id: (index + 1).toString(),
+        name: img.image,
+        tag: img.tag,
+        size: img.size,
+        pulled: new Date(img.Pulled_on).toISOString().split('T')[0],
+        source: 'local' as 'local' | 'registry',
+        description: img.desc
+      })));
+
+    const fetchRegistryImages = fetch('http://localhost:3000/images')
+      .then(response => response.json())
+      .then(data => data.repo_images.map((img: any, index: number) => ({
+        id: (index + 1 + 1000).toString(), // Ensure unique IDs
+        name: img.image,
+        tag: img.tag,
+        size: img.size,
+        pulled: new Date(img.Pulled_on).toISOString().split('T')[0],
+        source: 'registry' as 'local' | 'registry',
+        description: img.desc
+      })));
+
+    Promise.all([fetchLocalImages, fetchRegistryImages])
+      .then(([localImages, registryImages]) => {
+        setImages([...localImages, ...registryImages]);
       })
       .catch(error => console.error('Error fetching images:', error));
   }, []);
