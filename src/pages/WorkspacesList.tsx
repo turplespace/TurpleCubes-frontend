@@ -60,7 +60,7 @@ const WorkspacesList: React.FC<WorkspacesListProps> = ({ pageNavigator }) => {
   useEffect(() => {
     localStorage.setItem('selectedPage',"WorkspaceDashboard");
     // Fetch workspaces from the API
-    fetch('http://localhost:8080/api/workspaces')
+    fetch('http://localhost:8080/api/workspace')
       .then(response => response.json())
       .then(data => {
         if (data && data.workspaces) {
@@ -95,7 +95,7 @@ const WorkspacesList: React.FC<WorkspacesListProps> = ({ pageNavigator }) => {
   };
 
   const handleDeploy = (workspaceId: string) => {
-    fetch(`http://localhost:8080/api/workspace/deploy?workspace_id=${workspaceId}`, {
+    fetch(`http://localhost:8080/api/workspace/${workspaceId}/deploy`, {
       method: 'POST'
     })
       .then(response => response.json())
@@ -122,7 +122,7 @@ const WorkspacesList: React.FC<WorkspacesListProps> = ({ pageNavigator }) => {
   };
 
   const handleRedeploy = (workspaceId: string) => {
-    fetch(`http://localhost:8080/api/workspace/redeploy?workspace_id=${workspaceId}`, {
+    fetch(`http://localhost:8080/api/workspace/${workspaceId}/redeploy`, {
       method: 'POST'
     })
       .then(response => response.json())
@@ -149,7 +149,7 @@ const WorkspacesList: React.FC<WorkspacesListProps> = ({ pageNavigator }) => {
   };
 
   const handleStop = (workspaceId: string) => {
-    fetch(`http://localhost:8080/api/workspace/stop?workspace_id=${workspaceId}`, {
+    fetch(`http://localhost:8080/api/workspace/${workspaceId}/stop`, {
       method: 'POST'
     })
       .then(response => response.json())
@@ -176,7 +176,7 @@ const WorkspacesList: React.FC<WorkspacesListProps> = ({ pageNavigator }) => {
   };
 
   const handleDelete = (workspaceId: string) => {
-    fetch(`http://localhost:8080/api/workspace/delete?id=${workspaceId}`, {
+    fetch(`http://localhost:8080/api/workspace/${workspaceId}`, {
       method: 'DELETE'
     })
       .then(response => response.json())
@@ -187,7 +187,7 @@ const WorkspacesList: React.FC<WorkspacesListProps> = ({ pageNavigator }) => {
   };
 
   const handleCreateWorkspace = () => {
-    fetch('http://localhost:8080/api/workspace/create', {
+    fetch('http://localhost:8080/api/workspace', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

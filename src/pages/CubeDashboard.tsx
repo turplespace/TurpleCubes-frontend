@@ -84,7 +84,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
     image: '',
     tag: ''
   });
-
+  const [isDevContainer,setIsDevContainer] = useState(false)
   useEffect(() => {
     localStorage.setItem('selectedPage',"CubeDashboard");
     const containerId = localStorage.getItem('selectedContainerId');
@@ -95,7 +95,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
 
   const fetchContainerData = (containerId: string) => {
     setIsLoading(true);
-    fetch(`http://localhost:8080/api/cube?cube_id=${containerId}`)
+    fetch(`http://localhost:8080/api/cube/${containerId}`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -124,6 +124,11 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
           status: data.status || 'stopped',
           service_name: data.container_data.service_name || ''
         };
+
+        if (workspaceData.image.split(":")[1]=='dev'){
+          setIsDevContainer(true)
+        }
+      
         setWorkspace(workspaceData);
         setIsLoading(false);
       })
@@ -149,26 +154,32 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
       alert('Please enter both image name and tag');
       return;
     }
-  
-    if (containerId) {
-      fetch(`http://localhost:8080/api/cube/commit?cube_id=${containerId}&image=${commitForm.image}&tag=${commitForm.tag}`, {
-        method: 'POST'
-      })
-      .then(response => {
-        if (!response.ok) {
-          return response.text().then(text => { throw new Error(text) });
-        }
-        return response.json();
-      })
-      .then(() => {
-        alert('Container committed successfully!');
-        setIsCommitDialogOpen(false);
-      })
-      .catch(error => {
-        console.error('Error committing container:', error);
-        alert('Failed to commit container: ' + error.message);
-      });
+  if (containerId) {
+    fetch(`http://localhost:8080/api/cube/${containerId}/commit`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      image: commitForm.image,
+      tag: commitForm.tag
+    })
+    })
+    .then(response => {
+    if (!response.ok) {
+      return response.text().then(text => { throw new Error(text) });
     }
+    return response.json();
+    })
+    .then(() => {
+    alert('Container committed successfully!');
+    setIsCommitDialogOpen(false);
+    })
+    .catch(error => {
+    console.error('Error committing container:', error);
+    alert('Failed to commit container: ' + error.message);
+    });
+  }
   };
 
   const handleDeploy = () => {
@@ -176,7 +187,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
     if (containerId) {
       setWorkspace(prev => ({ ...prev, status: 'deploying' })); // Show deploying state immediately
       
-      fetch(`http://localhost:8080/api/cube/deploy?cube_id=${containerId}`, {
+      fetch(`http://localhost:8080/api/cube/${containerId}/deploy`, {
         method: 'POST'
       })
       .then(response => {
@@ -203,7 +214,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
   const handleStop = () => {
     const containerId = localStorage.getItem('selectedContainerId');
     if (containerId) {
-      fetch(`http://localhost:8080/api/cube/stop?cube_id=${containerId}`, {
+      fetch(`http://localhost:8080/api/cube/${containerId}/stop`, {
         method: 'POST'
       })
       .then(response => {
@@ -231,7 +242,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
     if (containerId) {
       setWorkspace(prev => ({ ...prev, status: 'deploying' })); // Show deploying state immediately
       
-      fetch(`http://localhost:8080/api/cube/redeploy?cube_id=${containerId}`, {
+      fetch(`http://localhost:8080/api/cube/${containerId}/redeploy`, {
         method: 'POST'
       })
       .then(response => {
@@ -272,13 +283,12 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
         ports: editedWorkspace.ports
       };
   
-      fetch(`http://localhost:8080/api/cube/edit`, {
+      fetch(`http://localhost:8080/api/cube/${containerId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cube_id: parseInt(containerId),
           updated_cube: updatedCube
         })
       })
@@ -390,9 +400,12 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
             <Button onClick={handleEdit} variant="outline" size="sm">
               <Edit className="h-4 w-4 mr-1" /> Edit
             </Button>
-            <Button onClick={handleCode} variant="outline" size="sm">
+            {
+              isDevContainer ?<Button onClick={handleCode} variant="outline" size="sm">
               <Code className="h-4 w-4 mr-1" /> Code
-            </Button>
+            </Button>:""
+            }
+            
             <Button
               onClick={handleDeploy}
               disabled={workspace.status === 'running'}
@@ -639,8 +652,9 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
           </div>
         </DialogContent>
       </Dialog>
-{/* Commit Dialog */}
-<Dialog open={isCommitDialogOpen} onOpenChange={setIsCommitDialogOpen}>
+      
+      {/* Commit Dialog */}
+      <Dialog open={isCommitDialogOpen} onOpenChange={setIsCommitDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Commit Container</DialogTitle>

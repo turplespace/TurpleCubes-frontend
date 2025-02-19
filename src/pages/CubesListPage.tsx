@@ -64,7 +64,7 @@ const CubesListPage: React.FC<CubesListPageProps> = ({ pageNavigator }) => {
     localStorage.setItem('selectedPage',"CubesPage");
     const workspaceId = localStorage.getItem('selectedWorkspaceId');
     if (workspaceId) {
-      fetch(`http://localhost:8080/api/cubes?workspace_id=${workspaceId}`)
+      fetch(`http://localhost:8080/api/workspace/${workspaceId}`)
         .then(response => response.json())
         .then(data => {
           if (data) {
@@ -104,10 +104,10 @@ const CubesListPage: React.FC<CubesListPageProps> = ({ pageNavigator }) => {
     containerId: number
   ) => {
     const urlMap = {
-      start: `http://localhost:8080/api/cube/deploy?cube_id=${containerId}`,
-      stop: `http://localhost:8080/api/cube/stop?cube_id=${containerId}`,
-      redeploy: `http://localhost:8080/api/cube/redeploy?cube_id=${containerId}`,
-      delete: `http://localhost:8080/api/cube/delete?cube_id=${containerId}`
+      start: `http://localhost:8080/api/cube/${containerId}/deploy`,
+      stop: `http://localhost:8080/api/cube/${containerId}/stop`,
+      redeploy: `http://localhost:8080/api/cube/${containerId}/redeploy`,
+      delete: `http://localhost:8080/api/cube/${containerId}`
     };
 
     fetch(urlMap[action], {

@@ -140,16 +140,16 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
 
   useEffect(() => {
     localStorage.setItem('selectedPage',"ImagesList");
-    fetch('http://localhost:8080/api/images')
+    fetch('http://localhost:8080/api/repo/local')
       .then(response => response.json())
       .then(data => {
-        const allImages = [...data.repo_images, ...data.custom_images].map((img: any, index: number) => ({
+        const allImages = [ ...data.custom_images].map((img: any, index: number) => ({
           id: (index + 1).toString(),
           name: img.image,
           tag: img.tag,
           size: img.size,
           pulled: new Date(img.Pulled_on).toISOString().split('T')[0],
-          source: data.repo_images.includes(img) ? 'registry' : 'local' as 'local' | 'registry',
+          source: 'local' as 'local' | 'registry',
           description: img.desc
         }));
         setImages(allImages);
@@ -194,7 +194,7 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
   
       const payload = {
         workspace_id: workspaceIdInt,
-        cubes: [{
+        cube_data: {
           name: containerForm.name,
           image: `${containerForm.image}:${containerForm.tag}`,
           ports: portsArray,
@@ -202,11 +202,11 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
           resource_limits: resourceLimits,
           volumes: volumesObj,
           labels: [`workspace_id=${workspaceIdInt}`, "service=turplespace"],
-          force: true
-        }]
+         
+        }
       };
 
-        const response = await fetch('http://localhost:8080/api/cube/add', {
+        const response = await fetch('http://localhost:8080/api/cube', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
