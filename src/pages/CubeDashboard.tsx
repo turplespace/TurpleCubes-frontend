@@ -442,7 +442,7 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
               <Edit className="h-4 w-4 mr-1" /> Edit
             </Button>
             {
-              isDevContainer ?<Button onClick={handleCode} variant="outline" size="sm">
+              isDevContainer && workspace.status == "running" ?<Button onClick={handleCode} variant="outline" size="sm">
               <Code className="h-4 w-4 mr-1" /> Code
             </Button>:""
             }
