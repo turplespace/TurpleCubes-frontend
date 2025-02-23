@@ -337,9 +337,7 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
                 Registry
               </Button>
             </div>
-            <Button onClick={() => setShowPullDialog(true)}>
-              <Download className="h-4 w-4 mr-2" /> Pull Image
-            </Button>
+            
           </div>
         </CardContent>
       </Card>
