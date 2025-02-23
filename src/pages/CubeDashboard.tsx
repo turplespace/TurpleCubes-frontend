@@ -40,11 +40,10 @@ interface WorkspaceConfig {
       limits: {
         cpus: string;
         memory: string;
-        swap: string;
       }
     }
   };
-  networks: string[];
+  
   status: 'running' | 'stopped' | 'deploying';
   service_name: string;
 }
@@ -62,11 +61,11 @@ const INITIAL_WORKSPACE: WorkspaceConfig = {
       limits: {
         cpus: '',
         memory: '',
-        swap: ''
+       
       }
     }
   },
-  networks: [],
+ 
   status: 'stopped',
   service_name: ''
 };
@@ -119,11 +118,11 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
               limits: {
                 cpus: data.container_data.resource_limits?.cpus || '',
                 memory: data.container_data.resource_limits?.memory || '',
-                swap: data.container_data.resource_limits?.swap || ''
+              
               }
             }
           },
-          networks: data.container_data.networks || [],
+        
           status: data.status || 'stopped',
           service_name: data.container_data.service_name || ''
         };
@@ -508,24 +507,9 @@ const CubeDashboard: React.FC<CubeDashboardProps> = ({ pageNavigator }) => {
                     <span className="text-muted-foreground">Memory:</span>
                     <span className="font-medium">{workspace.deploy.resources.limits.memory} MB</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Swap:</span>
-                    <span className="font-medium">{workspace.deploy.resources.limits.swap} MB</span>
-                  </div>
                 </div>
               </div>
 
-              {/* Networks */}
-              <div>
-                <h3 className="font-medium mb-2">Networks</h3>
-                <div className="space-y-1">
-                  {workspace.networks.map((network, index) => (
-                    <div key={index} className="text-sm p-1 bg-secondary/20 rounded">
-                      {network}
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Additional Configuration */}
