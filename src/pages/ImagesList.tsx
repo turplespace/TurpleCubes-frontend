@@ -153,7 +153,7 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
         return [];
       });
 
-    const fetchRegistryImages = fetch('http://localhost:3000/images')
+    const fetchRegistryImages = fetch('https://turplecubes-repo.onrender.com/images')
       .then(response => response.json())
       .then(data => data.repo_images.map((img: any, index: number) => ({
         id: (index + 1 + 1000).toString(), // Ensure unique IDs
