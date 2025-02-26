@@ -140,14 +140,14 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
 
     const fetchLocalImages = fetch('http://localhost:8080/api/repo/local')
       .then(response => response.json())
-      .then(data => data.custom_images.map((img: any, index: number) => ({
+      .then(data => data.custom_images ? data.custom_images.map((img: any, index: number) => ({
         id: (index + 1).toString(),
         name: img.image,
         tag: img.tag,
         size: img.size,
         source: 'local' as 'local' | 'registry',
         description: img.desc
-      })))
+      })) : [])
       .catch(error => {
         console.error('Error fetching local images:', error);
         return [];
