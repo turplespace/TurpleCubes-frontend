@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog";
 import { 
   Search,
-  Download,
   Box,
   Clock,
   RefreshCw,
@@ -31,7 +30,6 @@ interface Image {
   name: string;
   tag: string;
   size: string;
-  pulled: string;
   source: 'local' | 'registry';
   description: string;
 }
@@ -75,7 +73,7 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
   const [newTag, setNewTag] = useState('latest');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [resourceLimits, setResourceLimits] = useState({
-    cpus: "1.0",
+    cpus: "4.0",
     memory: "512M"
   });
   const [containerForm, setContainerForm] = useState<CreateCubePayload>({
@@ -148,10 +146,13 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
         name: img.image,
         tag: img.tag,
         size: img.size,
-        pulled: new Date(img.Pulled_on).toISOString().split('T')[0],
         source: 'local' as 'local' | 'registry',
         description: img.desc
-      })));
+      })))
+      .catch(error => {
+        console.error('Error fetching local images:', error);
+        return [];
+      });
 
     const fetchRegistryImages = fetch('http://localhost:3000/images')
       .then(response => response.json())
@@ -160,16 +161,22 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
         name: img.image,
         tag: img.tag,
         size: img.size,
-        pulled: new Date(img.Pulled_on).toISOString().split('T')[0],
         source: 'registry' as 'local' | 'registry',
         description: img.desc
-      })));
+      })))
+      .catch(error => {
+        console.error('Error fetching registry images:', error);
+        return [];
+      });
 
     Promise.all([fetchLocalImages, fetchRegistryImages])
       .then(([localImages, registryImages]) => {
         setImages([...localImages, ...registryImages]);
       })
-      .catch(error => console.error('Error fetching images:', error));
+      .catch(error => {
+        console.error('Error fetching images:', error);
+        setImages([]);
+      });
   }, []);
 
   const filteredImages = images.filter(image => {
@@ -367,9 +374,7 @@ const ImagesList: React.FC<ImagesListPageProps> = ({ pageNavigator }) => {
                         <span className="flex items-center gap-1">
                           <HardDrive className="h-4 w-4" /> {image.size}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" /> Pulled: {image.pulled}
-                        </span>
+                       
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
